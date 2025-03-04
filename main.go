@@ -109,6 +109,24 @@ func deleteProducts(c *gin.Context) {
 	c.IndentedJSON(http.StatusNoContent, nil)
 }
 
+func createStocks(c *gin.Context) {
+	var newStock stock
+
+	if err := c.BindJSON(&newStock); err != nil {
+		return
+	}
+
+	insertStmt, err := db.Prepare(`INSERT INTO "stock" (imageStock) VALUES ($1)`)
+	CheckError(err)
+
+	defer insertStmt.Close()
+
+	_, err = insertStmt.Exec(newStock.ImageStock)
+	CheckError(err)
+
+	c.IndentedJSON(http.StatusCreated, newStock)
+}
+
 func getStocks(c *gin.Context) {
 	rows, err := db.Query(`SELECT * FROM "stock"`)
 	CheckError(err)
@@ -127,6 +145,56 @@ func getStocks(c *gin.Context) {
 	c.IndentedJSON(http.StatusOK, stocks)
 }
 
+func updateStocks(c *gin.Context) {
+	var updateStock stock
+
+	if err := c.BindJSON(&updateStock); err != nil {
+		return
+	}
+
+	updateStmt, err := db.Prepare(`UPDATE "stock" set imageStock = $1 where id = $2`)
+	CheckError(err)
+
+	defer updateStmt.Close()
+
+	_, err = updateStmt.Exec(updateStock.ImageStock, updateStock.ID)
+	CheckError(err)
+
+	c.IndentedJSON(http.StatusCreated, updateStock)
+}
+
+func deleteStocks(c *gin.Context) {
+	id := c.Param("id")
+
+	deleteStmt, err := db.Prepare(`DELETE FROM "stock" where id = $1`)
+	CheckError(err)
+
+	defer deleteStmt.Close()
+
+	_, err = deleteStmt.Exec(id)
+	CheckError(err)
+
+	c.IndentedJSON(http.StatusNoContent, nil)
+}
+
+func createStores(c *gin.Context) {
+	var newStore store
+
+	if err := c.BindJSON(&newStore); err != nil {
+		return
+	}
+
+	insertStmt, err := db.Prepare(`INSERT INTO "store" (address, coordinates) VALUES ($1, $2)`)
+	CheckError(err)
+
+	defer insertStmt.Close()
+
+	_, err = insertStmt.Exec(newStore.Address, newStore.Coordinates)
+	CheckError(err)
+
+	c.IndentedJSON(http.StatusCreated, newStore)
+}
+
 func getStores(c *gin.Context) {
 	rows, err := db.Query(`SELECT * FROM "store"`)
 	CheckError(err)
@@ -143,6 +211,38 @@ func getStores(c *gin.Context) {
 	}
 	CheckError(err)
 	c.IndentedJSON(http.StatusOK, stores)
+}
+
+func updateStores(c *gin.Context) {
+	var updateStore store
+
+	if err := c.BindJSON(&updateStore); err != nil {
+		return
+	}
+
+	updateStmt, err := db.Prepare(`UPDATE "store" set address = $1, coordinates = $2 where id = $3`)
+	CheckError(err)
+
+	defer updateStmt.Close()
+
+	_, err = updateStmt.Exec(updateStore.Address, updateStore.Coordinates, updateStore.ID)
+	CheckError(err)
+
+	c.IndentedJSON(http.StatusCreated, updateStore)
+}
+
+func deleteStores(c *gin.Context) {
+	id := c.Param("id")
+
+	deleteStmt, err := db.Prepare(`DELETE FROM "store" where id = $1`)
+	CheckError(err)
+
+	defer deleteStmt.Close()
+
+	_, err = deleteStmt.Exec(id)
+	CheckError(err)
+
+	c.IndentedJSON(http.StatusNoContent, nil)
 }
 
 func main() {
@@ -166,7 +266,14 @@ func main() {
 	router.PUT("/products", updateProducts)
 	router.DELETE("/products/:id", deleteProducts)
 	router.GET("/stocks", getStocks)
+	router.POST("/stocks", createStocks)
+	router.PUT("/stocks", updateStocks)
+	router.DELETE("/stocks/:id", deleteStocks)
 	router.GET("/stores", getStores)
+	router.POST("/stores", createStores)
+	router.PUT("/stores", updateStores)
+	router.DELETE("/stores/:id", deleteStores)
+
 	router.Run(":8000")
 }
 
