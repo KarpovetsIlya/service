@@ -6,6 +6,9 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/golang-migrate/migrate/v4"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
+	_ "github.com/lib/pq"
 )
 
 const (
@@ -244,14 +247,35 @@ func deleteStores(c *gin.Context) {
 	c.IndentedJSON(http.StatusNoContent, nil)
 }
 
+func tableExists(db *sql.DB, tableName string) bool {
+	var name string
+
+	err := db.QueryRow(`SELECT to_regclass($1)`, tableName).Scan(&name)
+	if err != nil || name == "" {
+        return false
+    }
+	return true
+}
+
 func main() {
-	psqlconn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)
+	psqlconn := fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=disable", user, password, host, port, dbname)
 
 	var err error
 	db, err = sql.Open("postgres", psqlconn)
 	CheckError(err)
 
 	defer db.Close()
+
+	tableName := "productTest"
+	if !tableExists(db, tableName) {
+		fmt.Println("Таблица не существует")
+
+		m, err := migrate.New("file://iternal/database/migrations", psqlconn)
+		CheckError(err)
+
+		err = m.Up()
+		CheckError(err)
+	}
 
 	err = db.Ping()
 	CheckError(err)
