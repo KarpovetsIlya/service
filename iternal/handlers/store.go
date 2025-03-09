@@ -45,7 +45,7 @@ func GetStores(db *sql.DB) gin.HandlerFunc {
 		for rows.Next() {
 			var s model.Store
 
-			err = rows.Scan(&s.ID, &s.Address, s.Coordinates)
+			err = rows.Scan(&s.ID, &s.Address, &s.Coordinates)
 			if err != nil {
 				panic(err)
 			}
